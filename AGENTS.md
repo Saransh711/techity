@@ -102,3 +102,16 @@ Before adding dependencies, run `flutter pub outdated` and prefer latest stable 
 1. `main.dart` → `bootstrap.dart` (Hive init, `configureDependencies()`)
 2. `app.dart` (theme loaded before first frame — no white flash)
 3. `runApp`
+
+## Domain conventions
+
+### Repository reads (Future vs Stream)
+
+Domain repositories use **pull-based** `Future<Either<Failure, T>>` for list reads (e.g. `TaskRepository.getTasks`). There are no domain `Stream`s or `watch*` methods. Presentation reloads task data via Bloc events after create, update, delete, reorder, or filter changes.
+
+### Domain invariants
+
+- **sortIndex** — 0-based, contiguous across the full ordered list after every reorder. Data layer persists immediately on reorder.
+- **Soft-delete buffer** — `deleteTask` removes the task from the active list and returns a full `Task` snapshot (including original `sortIndex`). `restoreTask` reinserts that snapshot at the exact position. The undo countdown window is a presentation concern (`AppDurations.undoCountdown`).
+- **Categories** — fixed presets (Work / Personal / Urgent) defined in `core/constants/category_constants.dart` and `TaskCategory.defaults`. No custom category CRUD (YAGNI).
+- **Theme** — domain uses `AppThemePreference` (pure Dart). Maps to Flutter `ThemeMode` only in presentation via `ThemeModeMapper`.

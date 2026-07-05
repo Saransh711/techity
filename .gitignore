@@ -50,3 +50,6 @@ app.*.map.json
 
 # vscode
 .vscode/
+
+# Agent
+Agent.md
