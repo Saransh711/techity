@@ -30,9 +30,9 @@ abstract final class AppTheme {
         systemOverlayStyle: isLight
             ? SystemUiOverlayStyle.dark
             : SystemUiOverlayStyle.light,
-        titleTextStyle: AppTypography.textThemeForBrightness(brightness)
-            .titleLarge
-            ?.copyWith(color: colorScheme.onSurface),
+        titleTextStyle: AppTypography.textThemeForBrightness(
+          brightness,
+        ).titleLarge?.copyWith(color: colorScheme.onSurface),
       ),
       cardTheme: CardThemeData(
         color: colorScheme.surfaceContainerHighest,

@@ -26,21 +26,21 @@ abstract class TaskLocalDataSource {
 
   Future<TaskModel> toggleComplete(String id);
 
-  Future<List<TaskModel>> reorder({
-    required int oldIndex,
-    required int newIndex,
-  });
+  /// Persists contiguous 0-based [TaskModel.sortIndex] for every task in
+  /// [orderedTaskIds] (full global order).
+  Future<List<TaskModel>> reorderByIds(List<String> orderedTaskIds);
 
   Future<TodayCompletionStats> getTodayCompletionStats();
 
   Future<void> seedSampleTasksIfEmpty();
+
+  /// Appends [count] tasks in a single batched write (debug / perf testing).
+  Future<void> seedDebugTasks(int count);
 }
 
 class TaskLocalDataSourceImpl implements TaskLocalDataSource {
-  TaskLocalDataSourceImpl({
-    required this.tasksBox,
-    Uuid? uuid,
-  }) : _uuid = uuid ?? const Uuid();
+  TaskLocalDataSourceImpl({required this.tasksBox, Uuid? uuid})
+    : _uuid = uuid ?? const Uuid();
 
   final Box<TaskModel> tasksBox;
   final Uuid _uuid;
@@ -141,31 +141,27 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
   }
 
   @override
-  Future<List<TaskModel>> reorder({
-    required int oldIndex,
-    required int newIndex,
-  }) async {
-    final tasks = (await getAllOrdered()).toList(growable: true);
-    if (oldIndex < 0 ||
-        oldIndex >= tasks.length ||
-        newIndex < 0 ||
-        newIndex >= tasks.length) {
+  Future<List<TaskModel>> reorderByIds(List<String> orderedTaskIds) async {
+    final existing = await getAllOrdered();
+    if (orderedTaskIds.length != existing.length) {
       throw ArgumentError(
-        'Invalid reorder indices: oldIndex=$oldIndex, newIndex=$newIndex',
+        'orderedTaskIds length (${orderedTaskIds.length}) must match '
+        'task count (${existing.length})',
       );
     }
 
-    final moved = tasks.removeAt(oldIndex);
-    tasks.insert(newIndex, moved);
+    final byId = {for (final task in existing) task.id: task};
+    for (final id in orderedTaskIds) {
+      if (!byId.containsKey(id)) {
+        throw ArgumentError('Unknown task id in reorder: $id');
+      }
+    }
 
     final now = DateTime.now();
     final updates = <String, TaskModel>{};
-    for (var index = 0; index < tasks.length; index++) {
-      final task = tasks[index];
-      updates[task.id] = task.copyWithModel(
-        sortIndex: index,
-        updatedAt: now,
-      );
+    for (var index = 0; index < orderedTaskIds.length; index++) {
+      final task = byId[orderedTaskIds[index]]!;
+      updates[task.id] = task.copyWithModel(sortIndex: index, updatedAt: now);
     }
 
     await tasksBox.putAll(updates);
@@ -179,10 +175,10 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
   @override
   Future<TodayCompletionStats> getTodayCompletionStats() async {
     final tasks = await getAllOrdered();
-    final dueToday =
-        tasks.where((task) => task.dueDate != null && DateUtils.isToday(task.dueDate!));
-    final completedDueToday =
-        dueToday.where((task) => task.isCompleted).length;
+    final dueToday = tasks.where(
+      (task) => task.dueDate != null && DateUtils.isToday(task.dueDate!),
+    );
+    final completedDueToday = dueToday.where((task) => task.isCompleted).length;
 
     return TodayCompletionStats(
       completedCount: completedDueToday,
@@ -239,5 +235,43 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
     ];
 
     await tasksBox.putAll({for (final task in samples) task.id: task});
+  }
+
+  @override
+  Future<void> seedDebugTasks(int count) async {
+    if (count <= 0) {
+      return;
+    }
+
+    final existing = await getAllOrdered();
+    final startIndex = existing.length;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    const categoryIds = [
+      CategoryConstants.workId,
+      CategoryConstants.personalId,
+      CategoryConstants.urgentId,
+    ];
+
+    final updates = <String, TaskModel>{};
+    for (var i = 0; i < count; i++) {
+      final index = startIndex + i;
+      final dueOffset = i % 7 - 3;
+      final task = TaskModel(
+        id: _uuid.v4(),
+        title: 'Debug task ${index + 1}',
+        description: 'Seeded for scroll performance testing.',
+        categoryId: categoryIds[i % categoryIds.length],
+        isCompleted: i % 5 == 0,
+        sortIndex: index,
+        createdAt: now,
+        updatedAt: now,
+        dueDate: i % 4 == 0 ? null : today.add(Duration(days: dueOffset)),
+        completedAt: i % 5 == 0 ? now : null,
+      );
+      updates[task.id] = task;
+    }
+
+    await tasksBox.putAll(updates);
   }
 }

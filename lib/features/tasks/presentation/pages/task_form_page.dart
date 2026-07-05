@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../categories/domain/entities/task_category.dart';
 import '../bloc/task_form_bloc.dart';
@@ -13,10 +14,7 @@ import '../widgets/category_chip.dart';
 
 /// Create or edit a task.
 class TaskFormPage extends StatelessWidget {
-  const TaskFormPage({
-    this.taskId,
-    super.key,
-  });
+  const TaskFormPage({this.taskId, super.key});
 
   final String? taskId;
 
@@ -41,16 +39,17 @@ class _TaskFormView extends StatelessWidget {
           current is TaskFormSuccess || current is TaskFormFailure,
       listener: (context, state) {
         if (state is TaskFormSuccess) {
-          Navigator.of(context).pop(true);
+          AppRouter.pop(context, true);
         } else if (state is TaskFormFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
         }
       },
       builder: (context, state) {
         final theme = Theme.of(context);
-        final isEdit = state is TaskFormReady && state.mode == TaskFormMode.edit;
+        final isEdit =
+            state is TaskFormReady && state.mode == TaskFormMode.edit;
 
         return Scaffold(
           appBar: AppBar(
@@ -58,16 +57,15 @@ class _TaskFormView extends StatelessWidget {
           ),
           body: switch (state) {
             TaskFormInitial() || TaskFormLoading() => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: CircularProgressIndicator(),
+            ),
             TaskFormReady() => _TaskFormBody(state: state),
             TaskFormSuccess() => const SizedBox.shrink(),
             TaskFormFailure(:final message) => _TaskFormError(
-                message: message,
-                onRetry: () => context.read<TaskFormBloc>().add(
-                      const TaskFormInitialized(),
-                    ),
-              ),
+              message: message,
+              onRetry: () =>
+                  context.read<TaskFormBloc>().add(const TaskFormInitialized()),
+            ),
           },
           bottomNavigationBar: state is TaskFormReady
               ? SafeArea(
@@ -76,9 +74,9 @@ class _TaskFormView extends StatelessWidget {
                     child: FilledButton(
                       onPressed: state.isSubmitting
                           ? null
-                          : () => context
-                              .read<TaskFormBloc>()
-                              .add(const TaskFormSubmitRequested()),
+                          : () => context.read<TaskFormBloc>().add(
+                              const TaskFormSubmitRequested(),
+                            ),
                       child: state.isSubmitting
                           ? SizedBox(
                               height: theme.textTheme.labelLarge?.fontSize,
@@ -115,8 +113,9 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.state.title);
-    _descriptionController =
-        TextEditingController(text: widget.state.description);
+    _descriptionController = TextEditingController(
+      text: widget.state.description,
+    );
   }
 
   @override
@@ -191,8 +190,7 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
               if (state.dueDate != null)
                 IconButton(
                   tooltip: AppStrings.cancel,
-                  onPressed: () =>
-                      bloc.add(const TaskFormDueDateChanged(null)),
+                  onPressed: () => bloc.add(const TaskFormDueDateChanged(null)),
                   icon: const Icon(Icons.clear),
                 ),
               IconButton(
@@ -226,10 +224,7 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
 }
 
 class _TaskFormError extends StatelessWidget {
-  const _TaskFormError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _TaskFormError({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

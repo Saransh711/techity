@@ -50,21 +50,22 @@ final class TaskListLoaded extends TaskListState {
       visibleTasks: visibleTasks ?? this.visibleTasks,
       activeFilters: activeFilters ?? this.activeFilters,
       todayProgress: todayProgress ?? this.todayProgress,
-      pendingDelete:
-          clearPendingDelete ? null : (pendingDelete ?? this.pendingDelete),
+      pendingDelete: clearPendingDelete
+          ? null
+          : (pendingDelete ?? this.pendingDelete),
       undoSecondsRemaining: undoSecondsRemaining ?? this.undoSecondsRemaining,
     );
   }
 
   @override
   List<Object?> get props => [
-        allTasks,
-        visibleTasks,
-        activeFilters,
-        todayProgress,
-        pendingDelete,
-        undoSecondsRemaining,
-      ];
+    allTasks,
+    visibleTasks,
+    activeFilters,
+    todayProgress,
+    pendingDelete,
+    undoSecondsRemaining,
+  ];
 }
 
 final class TaskListFailure extends TaskListState {

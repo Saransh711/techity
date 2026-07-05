@@ -59,3 +59,23 @@ final class ApplyFiltersRequested extends TaskListEvent {
   @override
   List<Object?> get props => [filters];
 }
+
+final class ReorderTasksRequested extends TaskListEvent {
+  const ReorderTasksRequested(this.orderedVisibleTaskIds);
+
+  /// Post-drag order of currently visible tasks (ids only).
+  final List<String> orderedVisibleTaskIds;
+
+  @override
+  List<Object?> get props => [orderedVisibleTaskIds];
+}
+
+/// Debug-only — inserts 100 tasks for scroll performance verification.
+final class SeedDebugTasksRequested extends TaskListEvent {
+  const SeedDebugTasksRequested({this.count = 100});
+
+  final int count;
+
+  @override
+  List<Object?> get props => [count];
+}

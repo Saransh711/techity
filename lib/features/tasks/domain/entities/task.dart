@@ -52,22 +52,21 @@ class Task extends Equatable {
       sortIndex: sortIndex ?? this.sortIndex,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      completedAt:
-          clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        description,
-        categoryId,
-        isCompleted,
-        dueDate,
-        sortIndex,
-        createdAt,
-        updatedAt,
-        completedAt,
-      ];
+    id,
+    title,
+    description,
+    categoryId,
+    isCompleted,
+    dueDate,
+    sortIndex,
+    createdAt,
+    updatedAt,
+    completedAt,
+  ];
 }

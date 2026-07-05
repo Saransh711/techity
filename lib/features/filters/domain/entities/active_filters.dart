@@ -1,19 +1,10 @@
 import 'package:equatable/equatable.dart';
 
 /// Completion status filter for the task list.
-enum TaskStatusFilter {
-  all,
-  pending,
-  completed,
-}
+enum TaskStatusFilter { all, pending, completed }
 
 /// Due-date dimension filter (orthogonal to [TaskStatusFilter]).
-enum DueDateFilter {
-  all,
-  today,
-  overdue,
-  custom,
-}
+enum DueDateFilter { all, today, overdue, custom }
 
 /// Persisted filter state for the task list.
 class ActiveFilters extends Equatable {
@@ -66,10 +57,10 @@ class ActiveFilters extends Equatable {
 
   @override
   List<Object?> get props => [
-        categoryId,
-        status,
-        dueDateFilter,
-        dueDateStart,
-        dueDateEnd,
-      ];
+    categoryId,
+    status,
+    dueDateFilter,
+    dueDateStart,
+    dueDateEnd,
+  ];
 }

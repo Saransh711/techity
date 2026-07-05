@@ -4,10 +4,7 @@ import '../../../../core/constants/category_constants.dart';
 
 /// Fixed task category (Work, Personal, Urgent).
 class TaskCategory extends Equatable {
-  const TaskCategory({
-    required this.id,
-    required this.name,
-  });
+  const TaskCategory({required this.id, required this.name});
 
   final String id;
   final String name;

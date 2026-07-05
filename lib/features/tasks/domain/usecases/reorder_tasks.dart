@@ -6,16 +6,13 @@ import '../entities/task.dart';
 import '../repositories/task_repository.dart';
 
 class ReorderTasksParams extends Equatable {
-  const ReorderTasksParams({
-    required this.oldIndex,
-    required this.newIndex,
-  });
+  const ReorderTasksParams({required this.orderedTaskIds});
 
-  final int oldIndex;
-  final int newIndex;
+  /// Complete global order — every task id exactly once.
+  final List<String> orderedTaskIds;
 
   @override
-  List<Object?> get props => [oldIndex, newIndex];
+  List<Object?> get props => [orderedTaskIds];
 }
 
 /// Reorders tasks and persists contiguous 0-based sort indices.
@@ -25,9 +22,6 @@ class ReorderTasks {
   final TaskRepository _repository;
 
   Future<Either<Failure, List<Task>>> call(ReorderTasksParams params) {
-    return _repository.reorderTasks(
-      oldIndex: params.oldIndex,
-      newIndex: params.newIndex,
-    );
+    return _repository.reorderTasks(orderedTaskIds: params.orderedTaskIds);
   }
 }

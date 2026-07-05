@@ -14,6 +14,7 @@ class TaskListItem extends StatelessWidget {
     required this.category,
     required this.onToggleComplete,
     required this.onTap,
+    this.dragHandle,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class TaskListItem extends StatelessWidget {
   final TaskCategory category;
   final VoidCallback onToggleComplete;
   final VoidCallback onTap;
+  final Widget? dragHandle;
 
   static final _dateFormat = DateFormat.yMMMd();
 
@@ -85,6 +87,10 @@ class TaskListItem extends StatelessWidget {
                   ],
                 ),
               ),
+              if (dragHandle != null) ...[
+                AppSpacing.horizontalGapSm,
+                dragHandle!,
+              ],
             ],
           ),
         ),
@@ -107,8 +113,8 @@ class _DueDateLabel extends StatelessWidget {
     final color = isOverdue
         ? theme.colorScheme.error
         : isToday
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurfaceVariant;
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

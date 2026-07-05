@@ -26,8 +26,9 @@ class App extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => getIt<ThemeBloc>(param1: initialThemePreference)
-            ..add(const LoadTheme()),
+          create: (_) =>
+              getIt<ThemeBloc>(param1: initialThemePreference)
+                ..add(const LoadTheme()),
         ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(

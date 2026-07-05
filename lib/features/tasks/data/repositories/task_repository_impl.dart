@@ -56,9 +56,7 @@ class TaskRepositoryImpl implements TaskRepository {
   @override
   Future<Either<Failure, Task>> updateTask(Task task) async {
     try {
-      final updated = await _dataSource.update(
-        TaskModel.fromEntity(task),
-      );
+      final updated = await _dataSource.update(TaskModel.fromEntity(task));
       return Right(updated.toEntity());
     } catch (error) {
       return Left(ErrorMapper.map(error));
@@ -97,14 +95,10 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<Either<Failure, List<Task>>> reorderTasks({
-    required int oldIndex,
-    required int newIndex,
+    required List<String> orderedTaskIds,
   }) async {
     try {
-      final tasks = await _dataSource.reorder(
-        oldIndex: oldIndex,
-        newIndex: newIndex,
-      );
+      final tasks = await _dataSource.reorderByIds(orderedTaskIds);
       return Right(tasks.map((task) => task.toEntity()).toList());
     } catch (error) {
       return Left(ErrorMapper.map(error));
@@ -112,10 +106,21 @@ class TaskRepositoryImpl implements TaskRepository {
   }
 
   @override
-  Future<Either<Failure, TodayCompletionStats>> getTodayCompletionStats() async {
+  Future<Either<Failure, TodayCompletionStats>>
+  getTodayCompletionStats() async {
     try {
       final stats = await _dataSource.getTodayCompletionStats();
       return Right(stats);
+    } catch (error) {
+      return Left(ErrorMapper.map(error));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> seedDebugTasks({required int count}) async {
+    try {
+      await _dataSource.seedDebugTasks(count);
+      return const Right(null);
     } catch (error) {
       return Left(ErrorMapper.map(error));
     }

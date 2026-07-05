@@ -35,7 +35,9 @@ class ThemeToggleButton extends StatelessWidget {
         return IconButton(
           tooltip: AppStrings.theme,
           onPressed: () => context.read<ThemeBloc>().add(const ToggleTheme()),
-          icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+          icon: Icon(
+            isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+          ),
         );
       },
     );

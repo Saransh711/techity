@@ -14,12 +14,12 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     required this._getThemeMode,
     required this._saveThemeMode,
     required AppThemePreference initialPreference,
-  })  : super(
-          ThemeLoaded(
-            preference: initialPreference,
-            themeMode: ThemeModeMapper.toThemeMode(initialPreference),
-          ),
-        ) {
+  }) : super(
+         ThemeLoaded(
+           preference: initialPreference,
+           themeMode: ThemeModeMapper.toThemeMode(initialPreference),
+         ),
+       ) {
     on<LoadTheme>(_onLoadTheme);
     on<ToggleTheme>(_onToggleTheme);
   }
@@ -27,10 +27,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final GetThemeMode _getThemeMode;
   final SaveThemeMode _saveThemeMode;
 
-  Future<void> _onLoadTheme(
-    LoadTheme event,
-    Emitter<ThemeState> emit,
-  ) async {
+  Future<void> _onLoadTheme(LoadTheme event, Emitter<ThemeState> emit) async {
     final result = await _getThemeMode(const NoParams());
 
     result.fold(
@@ -78,8 +75,8 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     final effectiveBrightness = switch (current) {
       AppThemePreference.light => Brightness.light,
       AppThemePreference.dark => Brightness.dark,
-      AppThemePreference.system => WidgetsBinding
-              .instance.platformDispatcher.platformBrightness,
+      AppThemePreference.system =>
+        WidgetsBinding.instance.platformDispatcher.platformBrightness,
     };
 
     return effectiveBrightness == Brightness.light

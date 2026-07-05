@@ -17,7 +17,7 @@ Future<void> bootstrap() async {
 
   final initialPreference =
       getIt<SettingsLocalDataSource>().readThemePreferenceSync() ??
-          AppThemePreference.system;
+      AppThemePreference.system;
   final initialThemeMode = ThemeModeMapper.toThemeMode(initialPreference);
 
   runApp(

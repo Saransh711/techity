@@ -66,15 +66,15 @@ final class TaskFormReady extends TaskFormState {
 
   @override
   List<Object?> get props => [
-        mode,
-        title,
-        description,
-        categoryId,
-        dueDate,
-        originalTask,
-        titleError,
-        isSubmitting,
-      ];
+    mode,
+    title,
+    description,
+    categoryId,
+    dueDate,
+    originalTask,
+    titleError,
+    isSubmitting,
+  ];
 }
 
 final class TaskFormSuccess extends TaskFormState {

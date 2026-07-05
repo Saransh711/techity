@@ -15,7 +15,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
     required this._createTask,
     required this._updateTask,
     String? taskId,
-  })  : super(const TaskFormInitial()) {
+  }) : super(const TaskFormInitial()) {
     on<TaskFormInitialized>(_onInitialized);
     on<TaskFormLoadRequested>(_onLoadRequested);
     on<TaskFormTitleChanged>(_onTitleChanged);
@@ -35,10 +35,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
   final CreateTask _createTask;
   final UpdateTask _updateTask;
 
-  void _onInitialized(
-    TaskFormInitialized event,
-    Emitter<TaskFormState> emit,
-  ) {
+  void _onInitialized(TaskFormInitialized event, Emitter<TaskFormState> emit) {
     emit(
       TaskFormReady(
         mode: TaskFormMode.create,
@@ -81,12 +78,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
       return;
     }
 
-    emit(
-      current.copyWith(
-        title: event.title,
-        clearTitleError: true,
-      ),
-    );
+    emit(current.copyWith(title: event.title, clearTitleError: true));
   }
 
   void _onDescriptionChanged(
@@ -163,21 +155,15 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
         ),
       );
 
-      result.fold(
-        (failure) {
-          if (failure is ValidationFailure) {
-            emit(
-              current.copyWith(
-                isSubmitting: false,
-                titleError: failure.message,
-              ),
-            );
-          } else {
-            emit(TaskFormFailure(failure.message));
-          }
-        },
-        (_) => emit(const TaskFormSuccess()),
-      );
+      result.fold((failure) {
+        if (failure is ValidationFailure) {
+          emit(
+            current.copyWith(isSubmitting: false, titleError: failure.message),
+          );
+        } else {
+          emit(TaskFormFailure(failure.message));
+        }
+      }, (_) => emit(const TaskFormSuccess()));
     } else {
       final original = current.originalTask;
       if (original == null) {
@@ -196,21 +182,15 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
 
       final result = await _updateTask(UpdateTaskParams(task: updated));
 
-      result.fold(
-        (failure) {
-          if (failure is ValidationFailure) {
-            emit(
-              current.copyWith(
-                isSubmitting: false,
-                titleError: failure.message,
-              ),
-            );
-          } else {
-            emit(TaskFormFailure(failure.message));
-          }
-        },
-        (_) => emit(const TaskFormSuccess()),
-      );
+      result.fold((failure) {
+        if (failure is ValidationFailure) {
+          emit(
+            current.copyWith(isSubmitting: false, titleError: failure.message),
+          );
+        } else {
+          emit(TaskFormFailure(failure.message));
+        }
+      }, (_) => emit(const TaskFormSuccess()));
     }
   }
 }

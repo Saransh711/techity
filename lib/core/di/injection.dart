@@ -25,6 +25,7 @@ import '../../features/tasks/domain/usecases/get_tasks.dart';
 import '../../features/tasks/domain/usecases/get_today_progress.dart';
 import '../../features/tasks/domain/usecases/reorder_tasks.dart';
 import '../../features/tasks/domain/usecases/restore_task.dart';
+import '../../features/tasks/domain/usecases/seed_debug_tasks.dart';
 import '../../features/tasks/domain/usecases/toggle_task_complete.dart';
 import '../../features/tasks/domain/usecases/update_task.dart';
 
@@ -85,6 +86,9 @@ void _registerUseCases() {
   getIt.registerLazySingleton<GetTodayProgress>(
     () => GetTodayProgress(getIt<TaskRepository>()),
   );
+  getIt.registerLazySingleton<SeedDebugTasks>(
+    () => SeedDebugTasks(getIt<TaskRepository>()),
+  );
 
   getIt.registerLazySingleton<GetActiveFilters>(
     () => GetActiveFilters(getIt<FilterRepository>()),
@@ -112,10 +116,12 @@ void _registerBlocs() {
       deleteTask: getIt(),
       restoreTask: getIt(),
       toggleTaskComplete: getIt(),
+      reorderTasks: getIt(),
       getActiveFilters: getIt(),
       saveActiveFilters: getIt(),
       clearFilters: getIt(),
       getTodayProgress: getIt(),
+      seedDebugTasks: getIt(),
     ),
   );
 

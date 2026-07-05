@@ -78,10 +78,7 @@ class TaskFilterBar extends StatelessWidget {
 }
 
 class _FilterSection extends StatelessWidget {
-  const _FilterSection({
-    required this.label,
-    required this.child,
-  });
+  const _FilterSection({required this.label, required this.child});
 
   final String label;
   final Widget child;
@@ -131,9 +128,8 @@ class _CategoryFilters extends StatelessWidget {
           _FilterChoiceChip(
             label: AppStrings.filterAll,
             selected: activeFilters.categoryId == null,
-            onSelected: () => onFiltersChanged(
-              activeFilters.copyWith(clearCategoryId: true),
-            ),
+            onSelected: () =>
+                onFiltersChanged(activeFilters.copyWith(clearCategoryId: true)),
           ),
           for (final category in TaskCategory.defaults) ...[
             AppSpacing.horizontalGapSm,
@@ -182,9 +178,8 @@ class _StatusFilters extends StatelessWidget {
             _FilterChoiceChip(
               label: entry.value,
               selected: activeFilters.status == entry.key,
-              onSelected: () => onFiltersChanged(
-                activeFilters.copyWith(status: entry.key),
-              ),
+              onSelected: () =>
+                  onFiltersChanged(activeFilters.copyWith(status: entry.key)),
             ),
             if (entry.key != TaskStatusFilter.completed)
               AppSpacing.horizontalGapSm,
@@ -208,7 +203,8 @@ class _DueDateFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final customLabel = activeFilters.dueDateFilter == DueDateFilter.custom &&
+    final customLabel =
+        activeFilters.dueDateFilter == DueDateFilter.custom &&
             activeFilters.dueDateStart != null
         ? dateFormat.format(activeFilters.dueDateStart!)
         : AppStrings.filterPickDate;

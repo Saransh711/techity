@@ -23,11 +23,16 @@ abstract final class AppStrings {
   static const taskPending = 'Pending';
   static const noTasks = 'No tasks yet';
   static const noTasksSubtitle = 'Tap + to create your first task';
+  static const noFilterResults = 'No matching tasks';
+  static const noFilterResultsSubtitle =
+      'Try adjusting or clearing your filters';
   static const searchTasks = 'Search tasks';
   static const markComplete = 'Mark complete';
   static const markIncomplete = 'Mark incomplete';
   static const reorderTasks = 'Reorder tasks';
   static const todayProgress = "Today's progress";
+  static String todayProgressDetail(int completed, int total) =>
+      '$completed / $total due today';
 
   // Categories (fixed presets — extensible via [CategoryConstants] IDs)
   static const categoryWork = 'Work';
@@ -91,4 +96,8 @@ abstract final class AppStrings {
   static const errorDeleteTask = 'Failed to delete task.';
   static const errorLoadCategories = 'Failed to load categories.';
   static const errorLoadSettings = 'Failed to load settings.';
+
+  // Debug (dev builds only)
+  static const debugSeedTasks = 'Seed 100 tasks';
+  static const debugSeedTasksTooltip = 'Insert 100 debug tasks for scroll test';
 }

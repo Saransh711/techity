@@ -34,10 +34,14 @@ abstract class TaskRepository {
   Future<Either<Failure, Task>> toggleTaskComplete(String id);
 
   /// Reorders tasks and persists contiguous 0-based [Task.sortIndex] values.
+  ///
+  /// [orderedTaskIds] is the complete global order (every task id exactly once).
   Future<Either<Failure, List<Task>>> reorderTasks({
-    required int oldIndex,
-    required int newIndex,
+    required List<String> orderedTaskIds,
   });
 
   Future<Either<Failure, TodayCompletionStats>> getTodayCompletionStats();
+
+  /// Debug-only bulk insert for scroll performance verification.
+  Future<Either<Failure, void>> seedDebugTasks({required int count});
 }

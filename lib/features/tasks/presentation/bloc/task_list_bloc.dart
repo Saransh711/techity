@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_durations.dart';
 import '../../../../core/usecases/no_params.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../filters/domain/entities/active_filters.dart';
 import '../../../filters/domain/usecases/clear_filters.dart';
 import '../../../filters/domain/usecases/get_active_filters.dart';
@@ -13,9 +14,12 @@ import '../../domain/entities/today_completion_stats.dart';
 import '../../domain/usecases/delete_task.dart';
 import '../../domain/usecases/get_tasks.dart';
 import '../../domain/usecases/get_today_progress.dart';
+import '../../domain/usecases/reorder_tasks.dart';
 import '../../domain/usecases/restore_task.dart';
+import '../../domain/usecases/seed_debug_tasks.dart';
 import '../../domain/usecases/toggle_task_complete.dart';
 import '../utils/task_filter_utils.dart';
+import '../utils/task_reorder_utils.dart';
 import 'task_list_event.dart';
 import 'task_list_state.dart';
 
@@ -28,11 +32,13 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     required this._deleteTask,
     required this._restoreTask,
     required this._toggleTaskComplete,
+    required this._reorderTasks,
     required this._getActiveFilters,
     required this._saveActiveFilters,
     required this._clearFilters,
     required this._getTodayProgress,
-  })  : super(const TaskListInitial()) {
+    required this._seedDebugTasks,
+  }) : super(const TaskListInitial()) {
     on<LoadTasksRequested>(_onLoadTasks);
     on<RefreshTasksRequested>(_onRefreshTasks);
     on<DeleteTaskRequested>(_onDeleteTask);
@@ -42,16 +48,20 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     on<ToggleTaskCompleteRequested>(_onToggleComplete);
     on<ApplyFiltersRequested>(_onApplyFilters);
     on<ClearFiltersRequested>(_onClearFilters);
+    on<ReorderTasksRequested>(_onReorderTasks);
+    on<SeedDebugTasksRequested>(_onSeedDebugTasks);
   }
 
   final GetTasks _getTasks;
   final DeleteTask _deleteTask;
   final RestoreTask _restoreTask;
   final ToggleTaskComplete _toggleTaskComplete;
+  final ReorderTasks _reorderTasks;
   final GetActiveFilters _getActiveFilters;
   final SaveActiveFilters _saveActiveFilters;
   final ClearFilters _clearFilters;
   final GetTodayProgress _getTodayProgress;
+  final SeedDebugTasks _seedDebugTasks;
 
   Timer? _undoTimer;
 
@@ -97,8 +107,10 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
       return;
     }
 
-    final activeFilters =
-        filtersResult.fold((_) => ActiveFilters.empty, (filters) => filters);
+    final activeFilters = filtersResult.fold(
+      (_) => ActiveFilters.empty,
+      (filters) => filters,
+    );
 
     final tasksResult = await _getTasks(const NoParams());
     final progressResult = await _getTodayProgress(const NoParams());
@@ -144,37 +156,59 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     Emitter<TaskListState> emit,
   ) async {
     final current = state;
-    if (current is TaskListLoaded) {
-      final withoutTask = current.allTasks
-          .where((task) => task.id != event.taskId)
-          .toList();
-      emit(
-        current.copyWith(
-          allTasks: withoutTask,
-          visibleTasks: TaskFilterUtils.apply(
-            withoutTask,
-            current.activeFilters,
-          ),
-        ),
-      );
+    if (current is! TaskListLoaded) {
+      return;
     }
 
-    final result = await _deleteTask(DeleteTaskParams(id: event.taskId));
+    if (current.pendingDelete != null &&
+        current.pendingDelete!.id != event.taskId) {
+      await _commitPendingDelete(emit, current.pendingDelete!.id);
+      final refreshed = state;
+      if (refreshed is! TaskListLoaded) {
+        return;
+      }
+      return _scheduleDelete(emit, refreshed, event.taskId);
+    }
 
+    await _scheduleDelete(emit, current, event.taskId);
+  }
+
+  /// Soft-delete in UI only — persistence delete runs when the undo timer expires.
+  Future<void> _scheduleDelete(
+    Emitter<TaskListState> emit,
+    TaskListLoaded current,
+    String taskId,
+  ) async {
+    final taskIndex = current.allTasks.indexWhere((task) => task.id == taskId);
+    if (taskIndex == -1) {
+      return;
+    }
+
+    final task = current.allTasks[taskIndex];
+    final withoutTask = List<Task>.from(current.allTasks)..removeAt(taskIndex);
+
+    _undoTimer?.cancel();
+    emit(
+      current.copyWith(
+        allTasks: withoutTask,
+        visibleTasks: TaskFilterUtils.apply(withoutTask, current.activeFilters),
+        pendingDelete: task,
+        undoSecondsRemaining: AppDurations.undoCountdownSeconds,
+        todayProgress: _progressWithoutTask(current.todayProgress, task),
+      ),
+    );
+    _startUndoTimer();
+  }
+
+  Future<void> _commitPendingDelete(
+    Emitter<TaskListState> emit,
+    String taskId,
+  ) async {
+    _undoTimer?.cancel();
+    final result = await _deleteTask(DeleteTaskParams(id: taskId));
     await result.fold(
-      (failure) async {
-        emit(TaskListFailure(failure.message));
-        add(const RefreshTasksRequested());
-      },
-      (snapshot) async {
-        _undoTimer?.cancel();
-        await _loadAndEmit(
-          emit,
-          preservePendingDelete: snapshot,
-          preserveUndoSeconds: AppDurations.undoCountdownSeconds,
-        );
-        _startUndoTimer();
-      },
+      (failure) async => emit(TaskListFailure(failure.message)),
+      (_) async {},
     );
   }
 
@@ -188,15 +222,37 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     }
 
     _undoTimer?.cancel();
-    final result = await _restoreTask(
-      RestoreTaskParams(task: current.pendingDelete!),
+    final pending = current.pendingDelete!;
+
+    final tasksResult = await _getTasks(const NoParams());
+    final stillPersisted = tasksResult.fold(
+      (_) => false,
+      (tasks) => tasks.any((task) => task.id == pending.id),
     );
+
+    if (stillPersisted) {
+      // Undo window — task was never removed from storage; reinsert at sortIndex.
+      final restored = List<Task>.from(current.allTasks);
+      final insertAt = pending.sortIndex.clamp(0, restored.length);
+      restored.insert(insertAt, pending);
+
+      emit(
+        current.copyWith(
+          allTasks: restored,
+          visibleTasks: TaskFilterUtils.apply(restored, current.activeFilters),
+          clearPendingDelete: true,
+          undoSecondsRemaining: 0,
+          todayProgress: _progressWithTask(current.todayProgress, pending),
+        ),
+      );
+      return;
+    }
+
+    final result = await _restoreTask(RestoreTaskParams(task: pending));
 
     await result.fold(
       (failure) async => emit(TaskListFailure(failure.message)),
-      (_) async {
-        await _loadAndEmit(emit);
-      },
+      (_) async => await _loadAndEmit(emit),
     );
   }
 
@@ -218,15 +274,28 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     emit(current.copyWith(undoSecondsRemaining: nextSeconds));
   }
 
-  void _onUndoExpired(
+  Future<void> _onUndoExpired(
     UndoExpired event,
     Emitter<TaskListState> emit,
-  ) {
+  ) async {
     _undoTimer?.cancel();
     final current = state;
-    if (current is TaskListLoaded) {
-      emit(current.copyWith(clearPendingDelete: true, undoSecondsRemaining: 0));
+    if (current is! TaskListLoaded || current.pendingDelete == null) {
+      return;
     }
+
+    final taskId = current.pendingDelete!.id;
+    final result = await _deleteTask(DeleteTaskParams(id: taskId));
+
+    await result.fold(
+      (failure) async {
+        emit(TaskListFailure(failure.message));
+        add(const RefreshTasksRequested());
+      },
+      (_) async {
+        await _loadAndEmit(emit);
+      },
+    );
   }
 
   Future<void> _onToggleComplete(
@@ -330,11 +399,100 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     );
   }
 
+  Future<void> _onReorderTasks(
+    ReorderTasksRequested event,
+    Emitter<TaskListState> emit,
+  ) async {
+    final current = state;
+    if (current is! TaskListLoaded || current.pendingDelete != null) {
+      return;
+    }
+
+    final orderedGlobalIds = TaskReorderUtils.mergeVisibleReorder(
+      allTasks: current.allTasks,
+      visibleTaskIdsInNewOrder: event.orderedVisibleTaskIds,
+    );
+
+    final byId = {for (final task in current.allTasks) task.id: task};
+    final optimisticAllTasks = [
+      for (var index = 0; index < orderedGlobalIds.length; index++)
+        byId[orderedGlobalIds[index]]!.copyWith(sortIndex: index),
+    ];
+
+    emit(
+      current.copyWith(
+        allTasks: optimisticAllTasks,
+        visibleTasks: TaskFilterUtils.apply(
+          optimisticAllTasks,
+          current.activeFilters,
+        ),
+      ),
+    );
+
+    final result = await _reorderTasks(
+      ReorderTasksParams(orderedTaskIds: orderedGlobalIds),
+    );
+
+    await result.fold(
+      (failure) async {
+        emit(TaskListFailure(failure.message));
+        add(const RefreshTasksRequested());
+      },
+      (_) async {
+        await _loadAndEmit(
+          emit,
+          preservePendingDelete: current.pendingDelete,
+          preserveUndoSeconds: current.undoSecondsRemaining,
+        );
+      },
+    );
+  }
+
+  Future<void> _onSeedDebugTasks(
+    SeedDebugTasksRequested event,
+    Emitter<TaskListState> emit,
+  ) async {
+    final result = await _seedDebugTasks(
+      SeedDebugTasksParams(count: event.count),
+    );
+
+    await result.fold(
+      (failure) async => emit(TaskListFailure(failure.message)),
+      (_) async => await _loadAndEmit(emit),
+    );
+  }
+
   void _startUndoTimer() {
     _undoTimer?.cancel();
     _undoTimer = Timer.periodic(
       const Duration(seconds: 1),
       (_) => add(const UndoCountdownTick()),
+    );
+  }
+
+  TodayCompletionStats _progressWithoutTask(
+    TodayCompletionStats stats,
+    Task task,
+  ) {
+    if (task.dueDate == null || !DateUtils.isToday(task.dueDate!)) {
+      return stats;
+    }
+    return TodayCompletionStats(
+      totalCount: stats.totalCount - 1,
+      completedCount: stats.completedCount - (task.isCompleted ? 1 : 0),
+    );
+  }
+
+  TodayCompletionStats _progressWithTask(
+    TodayCompletionStats stats,
+    Task task,
+  ) {
+    if (task.dueDate == null || !DateUtils.isToday(task.dueDate!)) {
+      return stats;
+    }
+    return TodayCompletionStats(
+      totalCount: stats.totalCount + 1,
+      completedCount: stats.completedCount + (task.isCompleted ? 1 : 0),
     );
   }
 

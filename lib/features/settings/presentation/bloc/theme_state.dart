@@ -15,10 +15,7 @@ final class ThemeInitial extends ThemeState {
 }
 
 final class ThemeLoaded extends ThemeState {
-  const ThemeLoaded({
-    required this.preference,
-    required this.themeMode,
-  });
+  const ThemeLoaded({required this.preference, required this.themeMode});
 
   final AppThemePreference preference;
   final ThemeMode themeMode;
