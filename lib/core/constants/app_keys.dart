@@ -15,4 +15,5 @@ abstract final class AppKeys {
   static const themeModeKey = 'theme_mode';
   static const sortOrderKey = 'sort_order';
   static const activeFilterKey = 'active_filter';
+  static const activeFilterV2Key = 'active_filter_v2';
 }

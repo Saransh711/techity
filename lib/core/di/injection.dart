@@ -9,8 +9,12 @@ import '../../features/filters/domain/usecases/save_active_filters.dart';
 import '../../features/settings/data/datasources/settings_local_datasource.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/settings/domain/entities/app_theme_preference.dart';
 import '../../features/settings/domain/usecases/get_theme_mode.dart';
 import '../../features/settings/domain/usecases/save_theme_mode.dart';
+import '../../features/settings/presentation/bloc/theme_bloc.dart';
+import '../../features/tasks/presentation/bloc/task_form_bloc.dart';
+import '../../features/tasks/presentation/bloc/task_list_bloc.dart';
 import '../../features/tasks/data/datasources/task_local_datasource.dart';
 import '../../features/tasks/data/repositories/task_repository_impl.dart';
 import '../../features/tasks/domain/repositories/task_repository.dart';
@@ -31,6 +35,7 @@ final GetIt getIt = GetIt.instance;
 void configureDependencies() {
   _registerRepositories();
   _registerUseCases();
+  _registerBlocs();
 }
 
 void _registerRepositories() {
@@ -89,5 +94,37 @@ void _registerUseCases() {
   );
   getIt.registerLazySingleton<ClearFilters>(
     () => ClearFilters(getIt<FilterRepository>()),
+  );
+}
+
+void _registerBlocs() {
+  getIt.registerFactoryParam<ThemeBloc, AppThemePreference, void>(
+    (initialPreference, _) => ThemeBloc(
+      getThemeMode: getIt(),
+      saveThemeMode: getIt(),
+      initialPreference: initialPreference,
+    ),
+  );
+
+  getIt.registerFactory<TaskListBloc>(
+    () => TaskListBloc(
+      getTasks: getIt(),
+      deleteTask: getIt(),
+      restoreTask: getIt(),
+      toggleTaskComplete: getIt(),
+      getActiveFilters: getIt(),
+      saveActiveFilters: getIt(),
+      clearFilters: getIt(),
+      getTodayProgress: getIt(),
+    ),
+  );
+
+  getIt.registerFactoryParam<TaskFormBloc, String?, void>(
+    (taskId, _) => TaskFormBloc(
+      getTaskById: getIt(),
+      createTask: getIt(),
+      updateTask: getIt(),
+      taskId: taskId,
+    ),
   );
 }

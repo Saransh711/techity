@@ -17,6 +17,7 @@ abstract final class AppStrings {
   static const taskTitle = 'Title';
   static const taskDescription = 'Description';
   static const taskDueDate = 'Due Date';
+  static const noDueDate = 'No due date';
   static const taskCategory = 'Category';
   static const taskCompleted = 'Completed';
   static const taskPending = 'Pending';
@@ -28,19 +29,24 @@ abstract final class AppStrings {
   static const reorderTasks = 'Reorder tasks';
   static const todayProgress = "Today's progress";
 
-  // Categories
+  // Categories (fixed presets — extensible via [CategoryConstants] IDs)
+  static const categoryWork = 'Work';
+  static const categoryPersonal = 'Personal';
+  static const categoryUrgent = 'Urgent';
+  static const categoryAll = 'All categories';
+  static const categoryName = 'Category name';
+  static const noCategories = 'No categories yet';
   static const addCategory = 'Add Category';
   static const editCategory = 'Edit Category';
   static const deleteCategory = 'Delete Category';
-  static const categoryName = 'Category name';
-  static const noCategories = 'No categories yet';
-
-  // Filters & sort
   static const filterAll = 'All';
   static const filterToday = 'Today';
   static const filterOverdue = 'Overdue';
-  static const filterCompleted = 'Completed';
+  static const filterCompleted = 'Done';
   static const filterPending = 'Pending';
+  static const filterPickDate = 'Pick date';
+  static const filterStatus = 'Status';
+  static const filterDueDate = 'Due date';
   static const sortByDueDate = 'Due date';
   static const sortByCreated = 'Created';
   static const sortByManual = 'Manual order';
@@ -78,6 +84,7 @@ abstract final class AppStrings {
   static const errorGeneric = 'Something went wrong. Please try again.';
   static const errorCache = 'Unable to read or save data locally.';
   static const errorValidation = 'Please check your input and try again.';
+  static const errorTitleRequired = 'Title is required.';
   static const errorUnknown = 'An unexpected error occurred.';
   static const errorLoadTasks = 'Failed to load tasks.';
   static const errorSaveTask = 'Failed to save task.';

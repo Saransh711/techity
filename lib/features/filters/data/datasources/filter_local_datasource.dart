@@ -19,7 +19,7 @@ class FilterLocalDataSourceImpl implements FilterLocalDataSource {
 
   @override
   Future<ActiveFilters> readActiveFilters() async {
-    final stored = filtersBox.get(AppKeys.activeFilterKey);
+    final stored = filtersBox.get(AppKeys.activeFilterV2Key);
     if (stored == null) {
       return ActiveFilters.empty;
     }
@@ -32,13 +32,23 @@ class FilterLocalDataSourceImpl implements FilterLocalDataSource {
   @override
   Future<void> writeActiveFilters(ActiveFilters filters) async {
     await filtersBox.put(
-      AppKeys.activeFilterKey,
+      AppKeys.activeFilterV2Key,
       FilterModel.fromEntity(filters),
     );
   }
 
   @override
   Future<void> clearActiveFilters() async {
+    await filtersBox.delete(AppKeys.activeFilterV2Key);
+  }
+}
+
+/// Drops legacy v1 filter payloads that used a single combined status enum.
+Future<void> migrateFilterSchemaIfNeeded(Box<dynamic> filtersBox) async {
+  if (filtersBox.containsKey(AppKeys.activeFilterV2Key)) {
+    return;
+  }
+  if (filtersBox.containsKey(AppKeys.activeFilterKey)) {
     await filtersBox.delete(AppKeys.activeFilterKey);
   }
 }

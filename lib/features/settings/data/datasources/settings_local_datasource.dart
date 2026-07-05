@@ -4,6 +4,9 @@ import '../../../../core/constants/app_keys.dart';
 import '../../domain/entities/app_theme_preference.dart';
 
 abstract class SettingsLocalDataSource {
+  /// Synchronous read for cold-start theme resolution before [runApp].
+  AppThemePreference? readThemePreferenceSync();
+
   Future<AppThemePreference?> readThemePreference();
 
   Future<void> writeThemePreference(AppThemePreference preference);
@@ -15,12 +18,17 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   final Box<dynamic> settingsBox;
 
   @override
-  Future<AppThemePreference?> readThemePreference() async {
+  AppThemePreference? readThemePreferenceSync() {
     final raw = settingsBox.get(AppKeys.themeModeKey) as String?;
     if (raw == null) {
       return null;
     }
     return AppThemePreference.values.byName(raw);
+  }
+
+  @override
+  Future<AppThemePreference?> readThemePreference() async {
+    return readThemePreferenceSync();
   }
 
   @override

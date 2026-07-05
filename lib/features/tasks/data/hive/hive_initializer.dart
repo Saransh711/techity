@@ -17,6 +17,7 @@ Future<void> initializeHiveStorage(GetIt getIt) async {
   final settingsBox = await Hive.openBox<dynamic>(AppKeys.settingsBox);
   final tasksBox = await Hive.openBox<TaskModel>(AppKeys.tasksBox);
   final filtersBox = await Hive.openBox<dynamic>(AppKeys.filtersBox);
+  await migrateFilterSchemaIfNeeded(filtersBox);
 
   getIt.registerLazySingleton<SettingsLocalDataSource>(
     () => SettingsLocalDataSourceImpl(settingsBox: settingsBox),

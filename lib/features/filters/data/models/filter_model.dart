@@ -8,12 +8,14 @@ class FilterModel {
   const FilterModel({
     this.categoryId,
     this.status = TaskStatusFilter.all,
+    this.dueDateFilter = DueDateFilter.all,
     this.dueDateStart,
     this.dueDateEnd,
   });
 
   final String? categoryId;
   final TaskStatusFilter status;
+  final DueDateFilter dueDateFilter;
   final DateTime? dueDateStart;
   final DateTime? dueDateEnd;
 
@@ -21,6 +23,7 @@ class FilterModel {
     return FilterModel(
       categoryId: filters.categoryId,
       status: filters.status,
+      dueDateFilter: filters.dueDateFilter,
       dueDateStart: filters.dueDateStart,
       dueDateEnd: filters.dueDateEnd,
     );
@@ -30,28 +33,9 @@ class FilterModel {
     return ActiveFilters(
       categoryId: categoryId,
       status: status,
+      dueDateFilter: dueDateFilter,
       dueDateStart: dueDateStart,
       dueDateEnd: dueDateEnd,
-    );
-  }
-
-  FilterModel copyWith({
-    String? categoryId,
-    bool clearCategoryId = false,
-    TaskStatusFilter? status,
-    DateTime? dueDateStart,
-    bool clearDueDateStart = false,
-    DateTime? dueDateEnd,
-    bool clearDueDateEnd = false,
-  }) {
-    return FilterModel(
-      categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
-      status: status ?? this.status,
-      dueDateStart: clearDueDateStart
-          ? null
-          : (dueDateStart ?? this.dueDateStart),
-      dueDateEnd:
-          clearDueDateEnd ? null : (dueDateEnd ?? this.dueDateEnd),
     );
   }
 }
@@ -65,6 +49,7 @@ class FilterModelAdapter extends TypeAdapter<FilterModel> {
     return FilterModel(
       categoryId: _readOptionalString(reader),
       status: TaskStatusFilter.values[reader.readInt()],
+      dueDateFilter: DueDateFilter.values[reader.readInt()],
       dueDateStart: _readOptionalDate(reader),
       dueDateEnd: _readOptionalDate(reader),
     );
@@ -74,6 +59,7 @@ class FilterModelAdapter extends TypeAdapter<FilterModel> {
   void write(BinaryWriter writer, FilterModel obj) {
     _writeOptionalString(writer, obj.categoryId);
     writer.writeInt(obj.status.index);
+    writer.writeInt(obj.dueDateFilter.index);
     _writeOptionalDate(writer, obj.dueDateStart);
     _writeOptionalDate(writer, obj.dueDateEnd);
   }

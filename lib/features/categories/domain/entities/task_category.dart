@@ -7,35 +7,37 @@ class TaskCategory extends Equatable {
   const TaskCategory({
     required this.id,
     required this.name,
-    required this.colorHex,
   });
 
   final String id;
   final String name;
 
-  /// Six-digit hex color including leading `#`, e.g. `#2563EB`.
-  final String colorHex;
-
   static const work = TaskCategory(
     id: CategoryConstants.workId,
     name: CategoryConstants.workName,
-    colorHex: CategoryConstants.workColorHex,
   );
 
   static const personal = TaskCategory(
     id: CategoryConstants.personalId,
     name: CategoryConstants.personalName,
-    colorHex: CategoryConstants.personalColorHex,
   );
 
   static const urgent = TaskCategory(
     id: CategoryConstants.urgentId,
     name: CategoryConstants.urgentName,
-    colorHex: CategoryConstants.urgentColorHex,
   );
 
   static const List<TaskCategory> defaults = [work, personal, urgent];
 
+  static TaskCategory? byId(String id) {
+    for (final category in defaults) {
+      if (category.id == id) {
+        return category;
+      }
+    }
+    return null;
+  }
+
   @override
-  List<Object?> get props => [id, name, colorHex];
+  List<Object?> get props => [id, name];
 }

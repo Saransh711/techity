@@ -37,6 +37,11 @@ abstract final class AppColors {
   static const info = Color(0xFF0EA5E9);
   static const onInfo = Color(0xFFFFFFFF);
 
+  // Category accents (fixed presets)
+  static const categoryWork = primary;
+  static const categoryPersonal = success;
+  static const categoryUrgent = danger;
+
   // Misc
   static const scrim = Color(0x99000000);
   static const shadow = Color(0x1A000000);
