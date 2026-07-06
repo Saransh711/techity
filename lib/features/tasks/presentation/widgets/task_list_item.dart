@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart' hide DateUtils;
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/date_utils.dart';
@@ -23,8 +22,6 @@ class TaskListItem extends StatelessWidget {
   final VoidCallback onToggleComplete;
   final VoidCallback onTap;
   final Widget? dragHandle;
-
-  static final _dateFormat = DateFormat.yMMMd();
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +119,7 @@ class _DueDateLabel extends StatelessWidget {
         Icon(Icons.calendar_today_outlined, size: 14, color: color),
         AppSpacing.horizontalGapSm,
         Text(
-          TaskListItem._dateFormat.format(dueDate),
+          DateUtils.formatDueDate(dueDate),
           style: theme.textTheme.labelSmall?.copyWith(color: color),
         ),
       ],

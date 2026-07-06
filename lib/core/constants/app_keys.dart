@@ -16,4 +16,7 @@ abstract final class AppKeys {
   static const sortOrderKey = 'sort_order';
   static const activeFilterKey = 'active_filter';
   static const activeFilterV2Key = 'active_filter_v2';
+
+  // Local notifications
+  static const reminderChannelId = 'task_reminders';
 }

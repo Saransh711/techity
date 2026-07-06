@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'app.dart';
 import 'core/di/injection.dart';
+import 'core/usecases/no_params.dart';
+import 'features/reminders/domain/usecases/initialize_task_reminders.dart';
 import 'features/settings/data/datasources/settings_local_datasource.dart';
 import 'features/settings/domain/entities/app_theme_preference.dart';
 import 'features/settings/presentation/utils/theme_mode_mapper.dart';
@@ -14,6 +16,8 @@ Future<void> bootstrap() async {
   await Hive.initFlutter();
   await initializeHiveStorage(getIt);
   configureDependencies();
+
+  await getIt<InitializeTaskReminders>()(const NoParams());
 
   final initialPreference =
       getIt<SettingsLocalDataSource>().readThemePreferenceSync() ??

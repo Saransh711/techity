@@ -24,7 +24,6 @@ class AnimatedFabState extends State<AnimatedFab>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _expandAnimation;
-  OverlayEntry? _scrimEntry;
   bool _isExpanded = false;
 
   @override
@@ -44,7 +43,6 @@ class AnimatedFabState extends State<AnimatedFab>
 
   @override
   void dispose() {
-    _removeScrim();
     _controller.dispose();
     super.dispose();
   }
@@ -56,7 +54,6 @@ class AnimatedFabState extends State<AnimatedFab>
     _controller.reverse().then((_) {
       if (mounted) {
         setState(() => _isExpanded = false);
-        _removeScrim();
       }
     });
   }
@@ -66,41 +63,20 @@ class AnimatedFabState extends State<AnimatedFab>
       collapse();
     } else {
       setState(() => _isExpanded = true);
-      _insertScrim();
       _controller.forward();
     }
   }
 
-  void _insertScrim() {
-    _scrimEntry = OverlayEntry(
-      builder: (context) {
-        return Positioned.fill(
-          child: FadeTransition(
-            opacity: _expandAnimation,
-            child: GestureDetector(
-              onTap: collapse,
-              behavior: HitTestBehavior.opaque,
-              child: const ColoredBox(color: AppColors.scrim),
-            ),
-          ),
-        );
-      },
-    );
-    Overlay.of(context).insert(_scrimEntry!);
-  }
-
-  void _removeScrim() {
-    _scrimEntry?.remove();
-    _scrimEntry = null;
-  }
-
   void _runAction(VoidCallback action) {
-    collapse();
+    setState(() => _isExpanded = false);
+    _controller.reverse();
     action();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+
     return PopScope(
       canPop: !_isExpanded,
       onPopInvokedWithResult: (didPop, result) {
@@ -108,60 +84,81 @@ class AnimatedFabState extends State<AnimatedFab>
           collapse();
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomRight,
         children: [
-          AnimatedBuilder(
-            animation: _expandAnimation,
-            builder: (context, child) {
-              return ClipRect(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  heightFactor: _expandAnimation.value.clamp(0, 1),
-                  child: child,
-                ),
-              );
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _FabAction(
-                  animation: _expandAnimation,
-                  delay: 0.15,
-                  label: AppStrings.filterToday,
-                  icon: Icons.filter_alt_outlined,
-                  onPressed: () => _runAction(widget.onFilterShortcut),
-                ),
-                AppSpacing.itemGap,
-                _FabAction(
-                  animation: _expandAnimation,
-                  delay: 0.08,
-                  label: AppStrings.addTask,
-                  icon: Icons.add_task_outlined,
-                  onPressed: () => _runAction(widget.onAddTask),
-                ),
-                AppSpacing.sectionGap,
-              ],
-            ),
-          ),
-          FloatingActionButton(
-            onPressed: _toggle,
-            tooltip: _isExpanded ? AppStrings.close : AppStrings.addTask,
-            child: RotationTransition(
-              turns: Tween<double>(
-                begin: 0,
-                end: 0.125,
-              ).animate(_expandAnimation),
-              child: AnimatedSwitcher(
-                duration: AppDurations.fabCollapse,
-                child: Icon(
-                  _isExpanded ? Icons.close : Icons.add,
-                  key: ValueKey(_isExpanded),
+          if (_isExpanded)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              width: screenSize.width,
+              height: screenSize.height,
+              child: FadeTransition(
+                opacity: _expandAnimation,
+                child: GestureDetector(
+                  onTap: collapse,
+                  behavior: HitTestBehavior.opaque,
+                  child: const ColoredBox(color: AppColors.scrim),
                 ),
               ),
             ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AnimatedBuilder(
+                animation: _expandAnimation,
+                builder: (context, child) {
+                  return ClipRect(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      heightFactor: _expandAnimation.value.clamp(0, 1),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _FabAction(
+                      animation: _expandAnimation,
+                      delay: 0.15,
+                      label: AppStrings.filterToday,
+                      icon: Icons.filter_alt_outlined,
+                      onPressed: () => _runAction(widget.onFilterShortcut),
+                    ),
+                    AppSpacing.itemGap,
+                    _FabAction(
+                      animation: _expandAnimation,
+                      delay: 0.08,
+                      label: AppStrings.addTask,
+                      icon: Icons.add_task_outlined,
+                      onPressed: () => _runAction(widget.onAddTask),
+                    ),
+                    AppSpacing.sectionGap,
+                  ],
+                ),
+              ),
+              FloatingActionButton(
+                onPressed: _toggle,
+                tooltip: _isExpanded ? AppStrings.close : AppStrings.addTask,
+                child: RotationTransition(
+                  turns: Tween<double>(
+                    begin: 0,
+                    end: 0.125,
+                  ).animate(_expandAnimation),
+                  child: AnimatedSwitcher(
+                    duration: AppDurations.fabCollapse,
+                    child: Icon(
+                      _isExpanded ? Icons.close : Icons.add,
+                      key: ValueKey(_isExpanded),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

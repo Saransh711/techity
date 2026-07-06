@@ -17,7 +17,9 @@ abstract final class AppStrings {
   static const taskTitle = 'Title';
   static const taskDescription = 'Description';
   static const taskDueDate = 'Due Date';
+  static const taskDueDateTime = 'Due date & time';
   static const noDueDate = 'No due date';
+  static const pickDueDateTime = 'Pick due date and time';
   static const taskCategory = 'Category';
   static const taskCompleted = 'Completed';
   static const taskPending = 'Pending';
@@ -27,12 +29,15 @@ abstract final class AppStrings {
   static const noFilterResultsSubtitle =
       'Try adjusting or clearing your filters';
   static const searchTasks = 'Search tasks';
+  static const clearSearch = 'Clear search';
   static const markComplete = 'Mark complete';
   static const markIncomplete = 'Mark incomplete';
   static const reorderTasks = 'Reorder tasks';
   static const todayProgress = "Today's progress";
   static String todayProgressDetail(int completed, int total) =>
       '$completed / $total due today';
+  static String todayProgressCompact(int completed, int total, int percent) =>
+      '$completed/$total · $percent%';
 
   // Categories (fixed presets — extensible via [CategoryConstants] IDs)
   static const categoryWork = 'Work';
@@ -100,4 +105,10 @@ abstract final class AppStrings {
   // Debug (dev builds only)
   static const debugSeedTasks = 'Seed 100 tasks';
   static const debugSeedTasksTooltip = 'Insert 100 debug tasks for scroll test';
+
+  // Reminders
+  static const reminderChannelName = 'Task reminders';
+  static const reminderChannelDescription =
+      'Notifications when your tasks are due';
+  static String taskReminderBody(String title) => '$title is due now';
 }

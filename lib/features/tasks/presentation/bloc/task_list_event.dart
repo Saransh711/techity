@@ -60,6 +60,15 @@ final class ApplyFiltersRequested extends TaskListEvent {
   List<Object?> get props => [filters];
 }
 
+final class SearchQueryChanged extends TaskListEvent {
+  const SearchQueryChanged(this.query);
+
+  final String query;
+
+  @override
+  List<Object?> get props => [query];
+}
+
 final class ReorderTasksRequested extends TaskListEvent {
   const ReorderTasksRequested(this.orderedVisibleTaskIds);
 

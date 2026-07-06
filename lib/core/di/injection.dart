@@ -13,6 +13,15 @@ import '../../features/settings/domain/entities/app_theme_preference.dart';
 import '../../features/settings/domain/usecases/get_theme_mode.dart';
 import '../../features/settings/domain/usecases/save_theme_mode.dart';
 import '../../features/settings/presentation/bloc/theme_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import '../../features/reminders/data/repositories/task_reminder_repository_impl.dart';
+import '../../features/reminders/data/services/local_notification_service.dart';
+import '../../features/reminders/domain/repositories/task_reminder_repository.dart';
+import '../../features/reminders/domain/usecases/cancel_task_reminder.dart';
+import '../../features/reminders/domain/usecases/initialize_task_reminders.dart';
+import '../../features/reminders/domain/usecases/request_reminder_permissions.dart';
+import '../../features/reminders/domain/usecases/schedule_task_reminder.dart';
 import '../../features/tasks/presentation/bloc/task_form_bloc.dart';
 import '../../features/tasks/presentation/bloc/task_list_bloc.dart';
 import '../../features/tasks/data/datasources/task_local_datasource.dart';
@@ -34,9 +43,19 @@ final GetIt getIt = GetIt.instance;
 /// Registers repositories and use cases. Data sources must already be
 /// registered via [initializeHiveStorage] before calling this.
 void configureDependencies() {
+  _registerPlatformServices();
   _registerRepositories();
   _registerUseCases();
   _registerBlocs();
+}
+
+void _registerPlatformServices() {
+  getIt.registerLazySingleton<FlutterLocalNotificationsPlugin>(
+    () => FlutterLocalNotificationsPlugin(),
+  );
+  getIt.registerLazySingleton<LocalNotificationService>(
+    () => LocalNotificationService(getIt<FlutterLocalNotificationsPlugin>()),
+  );
 }
 
 void _registerRepositories() {
@@ -48,6 +67,9 @@ void _registerRepositories() {
   );
   getIt.registerLazySingleton<FilterRepository>(
     () => FilterRepositoryImpl(getIt<FilterLocalDataSource>()),
+  );
+  getIt.registerLazySingleton<TaskReminderRepository>(
+    () => TaskReminderRepositoryImpl(getIt<LocalNotificationService>()),
   );
 }
 
@@ -99,6 +121,19 @@ void _registerUseCases() {
   getIt.registerLazySingleton<ClearFilters>(
     () => ClearFilters(getIt<FilterRepository>()),
   );
+
+  getIt.registerLazySingleton<InitializeTaskReminders>(
+    () => InitializeTaskReminders(getIt<TaskReminderRepository>()),
+  );
+  getIt.registerLazySingleton<RequestReminderPermissions>(
+    () => RequestReminderPermissions(getIt<TaskReminderRepository>()),
+  );
+  getIt.registerLazySingleton<ScheduleTaskReminder>(
+    () => ScheduleTaskReminder(getIt<TaskReminderRepository>()),
+  );
+  getIt.registerLazySingleton<CancelTaskReminder>(
+    () => CancelTaskReminder(getIt<TaskReminderRepository>()),
+  );
 }
 
 void _registerBlocs() {
@@ -122,6 +157,8 @@ void _registerBlocs() {
       clearFilters: getIt(),
       getTodayProgress: getIt(),
       seedDebugTasks: getIt(),
+      scheduleTaskReminder: getIt(),
+      cancelTaskReminder: getIt(),
     ),
   );
 
@@ -130,6 +167,7 @@ void _registerBlocs() {
       getTaskById: getIt(),
       createTask: getIt(),
       updateTask: getIt(),
+      scheduleTaskReminder: getIt(),
       taskId: taskId,
     ),
   );

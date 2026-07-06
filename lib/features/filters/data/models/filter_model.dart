@@ -11,6 +11,7 @@ class FilterModel {
     this.dueDateFilter = DueDateFilter.all,
     this.dueDateStart,
     this.dueDateEnd,
+    this.searchQuery = '',
   });
 
   final String? categoryId;
@@ -18,6 +19,7 @@ class FilterModel {
   final DueDateFilter dueDateFilter;
   final DateTime? dueDateStart;
   final DateTime? dueDateEnd;
+  final String searchQuery;
 
   factory FilterModel.fromEntity(ActiveFilters filters) {
     return FilterModel(
@@ -26,6 +28,7 @@ class FilterModel {
       dueDateFilter: filters.dueDateFilter,
       dueDateStart: filters.dueDateStart,
       dueDateEnd: filters.dueDateEnd,
+      searchQuery: filters.searchQuery,
     );
   }
 
@@ -36,6 +39,7 @@ class FilterModel {
       dueDateFilter: dueDateFilter,
       dueDateStart: dueDateStart,
       dueDateEnd: dueDateEnd,
+      searchQuery: searchQuery,
     );
   }
 }
@@ -46,12 +50,29 @@ class FilterModelAdapter extends TypeAdapter<FilterModel> {
 
   @override
   FilterModel read(BinaryReader reader) {
-    return FilterModel(
+    var searchQuery = '';
+    final model = FilterModel(
       categoryId: _readOptionalString(reader),
       status: TaskStatusFilter.values[reader.readInt()],
       dueDateFilter: DueDateFilter.values[reader.readInt()],
       dueDateStart: _readOptionalDate(reader),
       dueDateEnd: _readOptionalDate(reader),
+    );
+
+    if (reader.availableBytes > 0) {
+      final hasQuery = reader.readBool();
+      if (hasQuery) {
+        searchQuery = reader.readString();
+      }
+    }
+
+    return FilterModel(
+      categoryId: model.categoryId,
+      status: model.status,
+      dueDateFilter: model.dueDateFilter,
+      dueDateStart: model.dueDateStart,
+      dueDateEnd: model.dueDateEnd,
+      searchQuery: searchQuery,
     );
   }
 
@@ -62,6 +83,7 @@ class FilterModelAdapter extends TypeAdapter<FilterModel> {
     writer.writeInt(obj.dueDateFilter.index);
     _writeOptionalDate(writer, obj.dueDateStart);
     _writeOptionalDate(writer, obj.dueDateEnd);
+    _writeOptionalString(writer, obj.searchQuery.isEmpty ? null : obj.searchQuery);
   }
 
   String? _readOptionalString(BinaryReader reader) {

@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/adaptive_pickers.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../categories/domain/entities/task_category.dart';
 import '../bloc/task_form_bloc.dart';
 import '../bloc/task_form_event.dart';
@@ -17,8 +18,6 @@ class TaskFormPage extends StatelessWidget {
   const TaskFormPage({this.taskId, super.key});
 
   final String? taskId;
-
-  static final _dateFormat = DateFormat.yMMMd();
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +149,7 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
             errorText: state.titleError,
           ),
           onChanged: (value) => bloc.add(TaskFormTitleChanged(value)),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         ),
         AppSpacing.sectionGap,
         TextField(
@@ -159,6 +159,7 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
           ),
           maxLines: 4,
           onChanged: (value) => bloc.add(TaskFormDescriptionChanged(value)),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         ),
         AppSpacing.sectionGap,
         Text(AppStrings.taskCategory, style: theme.textTheme.titleSmall),
@@ -178,11 +179,11 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
         AppSpacing.sectionGap,
         ListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(AppStrings.taskDueDate),
+          title: Text(AppStrings.taskDueDateTime),
           subtitle: Text(
             state.dueDate == null
                 ? AppStrings.noDueDate
-                : TaskFormPage._dateFormat.format(state.dueDate!),
+                : DateUtils.formatDueDate(state.dueDate!),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -194,8 +195,8 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
                   icon: const Icon(Icons.clear),
                 ),
               IconButton(
-                tooltip: AppStrings.taskDueDate,
-                onPressed: () => _pickDueDate(context, bloc, state.dueDate),
+                tooltip: AppStrings.pickDueDateTime,
+                onPressed: () => _pickDueDateTime(context, bloc, state.dueDate),
                 icon: const Icon(Icons.calendar_today_outlined),
               ),
             ],
@@ -205,17 +206,14 @@ class _TaskFormBodyState extends State<_TaskFormBody> {
     );
   }
 
-  Future<void> _pickDueDate(
+  Future<void> _pickDueDateTime(
     BuildContext context,
     TaskFormBloc bloc,
     DateTime? current,
   ) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: current ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 5),
+    final picked = await AdaptivePickers.pickDueDateTime(
+      context,
+      initial: current,
     );
     if (picked != null && context.mounted) {
       bloc.add(TaskFormDueDateChanged(picked));

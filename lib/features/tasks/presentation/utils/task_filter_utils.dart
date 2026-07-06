@@ -11,6 +11,15 @@ abstract final class TaskFilterUtils {
   }
 
   static bool _matches(Task task, ActiveFilters filters) {
+    if (filters.searchQuery.isNotEmpty) {
+      final query = filters.searchQuery.trim().toLowerCase();
+      final titleMatch = task.title.toLowerCase().contains(query);
+      final descriptionMatch = task.description.toLowerCase().contains(query);
+      if (!titleMatch && !descriptionMatch) {
+        return false;
+      }
+    }
+
     if (filters.categoryId != null && task.categoryId != filters.categoryId) {
       return false;
     }

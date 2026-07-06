@@ -9,6 +9,8 @@ import '../../../filters/domain/entities/active_filters.dart';
 import '../../../filters/domain/usecases/clear_filters.dart';
 import '../../../filters/domain/usecases/get_active_filters.dart';
 import '../../../filters/domain/usecases/save_active_filters.dart';
+import '../../../reminders/domain/usecases/cancel_task_reminder.dart';
+import '../../../reminders/domain/usecases/schedule_task_reminder.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/entities/today_completion_stats.dart';
 import '../../domain/usecases/delete_task.dart';
@@ -38,6 +40,8 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     required this._clearFilters,
     required this._getTodayProgress,
     required this._seedDebugTasks,
+    required this._scheduleTaskReminder,
+    required this._cancelTaskReminder,
   }) : super(const TaskListInitial()) {
     on<LoadTasksRequested>(_onLoadTasks);
     on<RefreshTasksRequested>(_onRefreshTasks);
@@ -50,6 +54,7 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     on<ClearFiltersRequested>(_onClearFilters);
     on<ReorderTasksRequested>(_onReorderTasks);
     on<SeedDebugTasksRequested>(_onSeedDebugTasks);
+    on<SearchQueryChanged>(_onSearchQueryChanged);
   }
 
   final GetTasks _getTasks;
@@ -62,6 +67,8 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
   final ClearFilters _clearFilters;
   final GetTodayProgress _getTodayProgress;
   final SeedDebugTasks _seedDebugTasks;
+  final ScheduleTaskReminder _scheduleTaskReminder;
+  final CancelTaskReminder _cancelTaskReminder;
 
   Timer? _undoTimer;
 
@@ -208,7 +215,7 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     final result = await _deleteTask(DeleteTaskParams(id: taskId));
     await result.fold(
       (failure) async => emit(TaskListFailure(failure.message)),
-      (_) async {},
+      (_) async => await _dropReminderForTask(taskId),
     );
   }
 
@@ -245,6 +252,7 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
           todayProgress: _progressWithTask(current.todayProgress, pending),
         ),
       );
+      await _syncReminderForTask(pending);
       return;
     }
 
@@ -252,7 +260,10 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
 
     await result.fold(
       (failure) async => emit(TaskListFailure(failure.message)),
-      (_) async => await _loadAndEmit(emit),
+      (restoredTask) async {
+        await _syncReminderForTask(restoredTask);
+        await _loadAndEmit(emit);
+      },
     );
   }
 
@@ -292,7 +303,8 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
         emit(TaskListFailure(failure.message));
         add(const RefreshTasksRequested());
       },
-      (_) async {
+      (deletedTask) async {
+        await _dropReminderForTask(deletedTask.id);
         await _loadAndEmit(emit);
       },
     );
@@ -333,7 +345,8 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
         emit(TaskListFailure(failure.message));
         add(const RefreshTasksRequested());
       },
-      (_) async {
+      (task) async {
+        await _syncReminderForTask(task);
         await _loadAndEmit(
           emit,
           preservePendingDelete: current.pendingDelete,
@@ -448,6 +461,39 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
     );
   }
 
+  Future<void> _onSearchQueryChanged(
+    SearchQueryChanged event,
+    Emitter<TaskListState> emit,
+  ) async {
+    final current = state;
+    if (current is! TaskListLoaded) {
+      return;
+    }
+
+    final updatedFilters = event.query.trim().isEmpty
+        ? current.activeFilters.copyWith(clearSearchQuery: true)
+        : current.activeFilters.copyWith(searchQuery: event.query);
+
+    final saveResult = await _saveActiveFilters(
+      SaveActiveFiltersParams(filters: updatedFilters),
+    );
+
+    await saveResult.fold(
+      (failure) async => emit(TaskListFailure(failure.message)),
+      (_) async {
+        emit(
+          current.copyWith(
+            activeFilters: updatedFilters,
+            visibleTasks: TaskFilterUtils.apply(
+              current.allTasks,
+              updatedFilters,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _onSeedDebugTasks(
     SeedDebugTasksRequested event,
     Emitter<TaskListState> emit,
@@ -494,6 +540,14 @@ class TaskListBloc extends Bloc<TaskListEvent, TaskListState> {
       totalCount: stats.totalCount + 1,
       completedCount: stats.completedCount + (task.isCompleted ? 1 : 0),
     );
+  }
+
+  Future<void> _syncReminderForTask(Task task) async {
+    await _scheduleTaskReminder(ScheduleTaskReminderParams(task: task));
+  }
+
+  Future<void> _dropReminderForTask(String taskId) async {
+    await _cancelTaskReminder(CancelTaskReminderParams(taskId: taskId));
   }
 
   @override

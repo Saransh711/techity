@@ -5,12 +5,12 @@ import 'core/constants/app_strings.dart';
 import 'core/di/injection.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/keyboard_dismisser.dart';
 import 'features/settings/domain/entities/app_theme_preference.dart';
 import 'features/settings/presentation/bloc/theme_bloc.dart';
 import 'features/settings/presentation/bloc/theme_event.dart';
 import 'features/settings/presentation/bloc/theme_state.dart';
 
-/// Root widget configured with the theme resolved before first frame.
 class App extends StatelessWidget {
   const App({
     required this.initialThemeMode,
@@ -48,6 +48,8 @@ class App extends StatelessWidget {
             themeMode: themeMode,
             initialRoute: AppRoutes.home,
             onGenerateRoute: AppRouter.onGenerateRoute,
+            builder: (context, child) =>
+                KeyboardDismisser(child: child ?? const SizedBox.shrink()),
           );
         },
       ),

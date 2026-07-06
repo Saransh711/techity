@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/adaptive_pickers.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../categories/domain/entities/task_category.dart';
 import '../../domain/entities/active_filters.dart';
@@ -27,7 +28,9 @@ class TaskFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _FilterSection(
@@ -73,6 +76,7 @@ class TaskFilterBar extends StatelessWidget {
             ),
           ),
       ],
+      ),
     );
   }
 }
@@ -260,11 +264,9 @@ class _DueDateFilters extends StatelessWidget {
   Future<void> _pickCustomDate(BuildContext context) async {
     final now = DateTime.now();
     final initial = activeFilters.dueDateStart ?? now;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 5),
+    final picked = await AdaptivePickers.pickDate(
+      context,
+      initial: initial,
     );
     if (picked == null || !context.mounted) {
       return;

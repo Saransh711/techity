@@ -14,6 +14,7 @@ class ActiveFilters extends Equatable {
     this.dueDateFilter = DueDateFilter.all,
     this.dueDateStart,
     this.dueDateEnd,
+    this.searchQuery = '',
   });
 
   /// `null` means all categories.
@@ -22,6 +23,7 @@ class ActiveFilters extends Equatable {
   final DueDateFilter dueDateFilter;
   final DateTime? dueDateStart;
   final DateTime? dueDateEnd;
+  final String searchQuery;
 
   static const empty = ActiveFilters();
 
@@ -29,7 +31,8 @@ class ActiveFilters extends Equatable {
   bool get hasActiveFilters =>
       categoryId != null ||
       status != TaskStatusFilter.all ||
-      dueDateFilter != DueDateFilter.all;
+      dueDateFilter != DueDateFilter.all ||
+      searchQuery.isNotEmpty;
 
   ActiveFilters copyWith({
     String? categoryId,
@@ -41,6 +44,8 @@ class ActiveFilters extends Equatable {
     DateTime? dueDateEnd,
     bool clearDueDateEnd = false,
     bool clearCustomDueDate = false,
+    String? searchQuery,
+    bool clearSearchQuery = false,
   }) {
     return ActiveFilters(
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
@@ -52,6 +57,7 @@ class ActiveFilters extends Equatable {
       dueDateEnd: clearCustomDueDate || clearDueDateEnd
           ? null
           : (dueDateEnd ?? this.dueDateEnd),
+      searchQuery: clearSearchQuery ? '' : (searchQuery ?? this.searchQuery),
     );
   }
 
@@ -62,5 +68,6 @@ class ActiveFilters extends Equatable {
     dueDateFilter,
     dueDateStart,
     dueDateEnd,
+    searchQuery,
   ];
 }

@@ -1,4 +1,7 @@
-/// Date helpers for task due-date filtering and display.
+import 'package:intl/intl.dart';
+
+import '../../features/reminders/domain/utils/reminder_schedule_utils.dart';
+
 abstract final class DateUtils {
   static DateTime startOfDay(DateTime date) {
     return DateTime(date.year, date.month, date.day);
@@ -14,5 +17,12 @@ abstract final class DateUtils {
     final today = startOfDay(reference ?? DateTime.now());
     final due = startOfDay(date);
     return due.isBefore(today);
+  }
+
+  static String formatDueDate(DateTime dueDate) {
+    if (ReminderScheduleUtils.hasExplicitTime(dueDate)) {
+      return DateFormat.yMMMd().add_jm().format(dueDate);
+    }
+    return DateFormat.yMMMd().format(dueDate);
   }
 }

@@ -9,9 +9,14 @@ import '../../domain/entities/today_completion_stats.dart';
 
 /// Animated circular progress ring for today's task completion.
 class TodayProgressRing extends StatefulWidget {
-  const TodayProgressRing({required this.stats, super.key});
+  const TodayProgressRing({
+    required this.stats,
+    this.forSliverHeader = false,
+    super.key,
+  });
 
   final TodayCompletionStats stats;
+  final bool forSliverHeader;
 
   static const ringSize = AppSpacing.xxl + AppSpacing.xl;
   static const strokeWidth = AppSpacing.sm;
@@ -68,63 +73,81 @@ class _TodayProgressRingState extends State<TodayProgressRing>
     final theme = Theme.of(context);
     final percent = (widget.stats.progress * 100).round();
 
+    final content = Row(
+      children: [
+        SizedBox(
+          width: TodayProgressRing.ringSize,
+          height: TodayProgressRing.ringSize,
+          child: AnimatedBuilder(
+            animation: _progressAnimation,
+            builder: (context, child) {
+              return CustomPaint(
+                painter: _ProgressRingPainter(
+                  progress: _progressAnimation.value,
+                  trackColor: theme.colorScheme.surfaceContainerHighest,
+                  progressColor: theme.colorScheme.primary,
+                  strokeWidth: TodayProgressRing.strokeWidth,
+                ),
+                child: Center(
+                  child: Text(
+                    '$percent%',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        AppSpacing.horizontalGapMd,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppStrings.todayProgress,
+                style: theme.textTheme.titleSmall,
+              ),
+              AppSpacing.itemGap,
+              Text(
+                AppStrings.todayProgressDetail(
+                  widget.stats.completedCount,
+                  widget.stats.totalCount,
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (widget.forSliverHeader) {
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: content,
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
       ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: TodayProgressRing.ringSize,
-            height: TodayProgressRing.ringSize,
-            child: AnimatedBuilder(
-              animation: _progressAnimation,
-              builder: (context, child) {
-                return CustomPaint(
-                  painter: _ProgressRingPainter(
-                    progress: _progressAnimation.value,
-                    trackColor: theme.colorScheme.surfaceContainerHighest,
-                    progressColor: theme.colorScheme.primary,
-                    strokeWidth: TodayProgressRing.strokeWidth,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$percent%',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          AppSpacing.horizontalGapMd,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.todayProgress,
-                  style: theme.textTheme.titleSmall,
-                ),
-                AppSpacing.itemGap,
-                Text(
-                  AppStrings.todayProgressDetail(
-                    widget.stats.completedCount,
-                    widget.stats.totalCount,
-                  ),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: content,
     );
   }
 }

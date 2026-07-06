@@ -6,6 +6,7 @@ import '../../../categories/domain/entities/task_category.dart';
 import '../../domain/usecases/create_task.dart';
 import '../../domain/usecases/get_task_by_id.dart';
 import '../../domain/usecases/update_task.dart';
+import '../../../reminders/domain/usecases/schedule_task_reminder.dart';
 import 'task_form_event.dart';
 import 'task_form_state.dart';
 
@@ -14,6 +15,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
     required this._getTaskById,
     required this._createTask,
     required this._updateTask,
+    required this._scheduleTaskReminder,
     String? taskId,
   }) : super(const TaskFormInitial()) {
     on<TaskFormInitialized>(_onInitialized);
@@ -34,6 +36,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
   final GetTaskById _getTaskById;
   final CreateTask _createTask;
   final UpdateTask _updateTask;
+  final ScheduleTaskReminder _scheduleTaskReminder;
 
   void _onInitialized(TaskFormInitialized event, Emitter<TaskFormState> emit) {
     emit(
@@ -155,7 +158,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
         ),
       );
 
-      result.fold((failure) {
+      await result.fold((failure) async {
         if (failure is ValidationFailure) {
           emit(
             current.copyWith(isSubmitting: false, titleError: failure.message),
@@ -163,7 +166,10 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
         } else {
           emit(TaskFormFailure(failure.message));
         }
-      }, (_) => emit(const TaskFormSuccess()));
+      }, (task) async {
+        await _scheduleTaskReminder(ScheduleTaskReminderParams(task: task));
+        emit(const TaskFormSuccess());
+      });
     } else {
       final original = current.originalTask;
       if (original == null) {
@@ -182,7 +188,7 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
 
       final result = await _updateTask(UpdateTaskParams(task: updated));
 
-      result.fold((failure) {
+      await result.fold((failure) async {
         if (failure is ValidationFailure) {
           emit(
             current.copyWith(isSubmitting: false, titleError: failure.message),
@@ -190,7 +196,10 @@ class TaskFormBloc extends Bloc<TaskFormEvent, TaskFormState> {
         } else {
           emit(TaskFormFailure(failure.message));
         }
-      }, (_) => emit(const TaskFormSuccess()));
+      }, (task) async {
+        await _scheduleTaskReminder(ScheduleTaskReminderParams(task: task));
+        emit(const TaskFormSuccess());
+      });
     }
   }
 }
